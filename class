@@ -1,0 +1,1 @@
+Df_Column_Nm = ",".join([f'"{col}"' for col in Source_Df.columns])
