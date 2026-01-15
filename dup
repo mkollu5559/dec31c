@@ -1,0 +1,66 @@
+/* =========================================================
+   1) CONFIRM PRIMARY KEY (there is NONE)
+   ========================================================= */
+SELECT
+  ConstraintName,
+  ColumnName
+FROM DBC.ConstraintsV
+WHERE DatabaseName = 'PHARMACY_CORE_T'
+  AND TableName    = 'AH_SDOH_Activity'
+  AND ConstraintType = 'P';
+
+
+/* =========================================================
+   2) CONFIRM PRIMARY INDEX (NOPI check)
+   ========================================================= */
+SELECT
+  IndexType,
+  ColumnName
+FROM DBC.IndicesV
+WHERE DatabaseName = 'PHARMACY_CORE_T'
+  AND TableName    = 'AH_SDOH_Activity';
+
+
+/* =========================================================
+   3) CHECK DUPLICATES ON SurveyResponseID
+   ========================================================= */
+SELECT
+  SurveyResponseID,
+  COUNT(*) AS dup_cnt
+FROM PHARMACY_CORE_T.AH_SDOH_Activity
+GROUP BY SurveyResponseID
+HAVING COUNT(*) > 1
+ORDER BY dup_cnt DESC;
+
+
+/* =========================================================
+   4) SHOW FULL DUPLICATE ROWS
+   ========================================================= */
+SELECT *
+FROM PHARMACY_CORE_T.AH_SDOH_Activity
+WHERE SurveyResponseID IN (
+  SELECT SurveyResponseID
+  FROM PHARMACY_CORE_T.AH_SDOH_Activity
+  GROUP BY SurveyResponseID
+  HAVING COUNT(*) > 1
+)
+ORDER BY SurveyResponseID;
+
+
+/* =========================================================
+   5) SUMMARY COUNTS
+   ========================================================= */
+SELECT
+  COUNT(*)                           AS total_rows,
+  COUNT(DISTINCT SurveyResponseID)   AS distinct_surveyresponseid,
+  COUNT(*) - COUNT(DISTINCT SurveyResponseID) AS duplicate_rows
+FROM PHARMACY_CORE_T.AH_SDOH_Activity;
+
+
+/* =========================================================
+   6) OPTIONAL: ADD PRIMARY INDEX (ONLY IF NO DUPLICATES)
+   ⚠️ HEAVY OPERATION – redistributes data
+   ========================================================= */
+-- RUN ONLY AFTER STEP 3 RETURNS ZERO ROWS
+ALTER TABLE PHARMACY_CORE_T.AH_SDOH_Activity
+ADD PRIMARY INDEX (SurveyResponseID);
